@@ -17,23 +17,24 @@ constexpr int HAT_I2C_SCL = 26;
 constexpr uint32_t HAT_I2C_HZ = 100000UL;
 
 // ---------------------------------------------------------------------------
-// M5Stack ENCODER HAT (SKU A031) register map
+// M5Stack MiniEncoderC HAT (SKU U157) register map
 // ---------------------------------------------------------------------------
-// The HAT mounts a small MCU that exposes the rotary encoder + push button
-// over I2C @ 0x5E with this layout (matches the upstream M5HAT-Encoder
-// Arduino driver):
-//   0x00          absolute encoder value, signed int32 little-endian
-//   0x10          incremental encoder count, signed int32 little-endian
-//                 (cleared on read)
+// The HAT exposes the rotary encoder + push button over I2C @ 0x42. Register
+// map mirrors the upstream M5Unit-MiniEncoderC Arduino driver:
+//   0x00          absolute encoder counter, signed int32 little-endian
+//   0x10          incremental encoder counter, signed int32 little-endian
+//                 (cleared on every read)
 //   0x20          button state, 1 byte (0 = pressed, 1 = released)
-//   0x70..0x75    RGB LEDs (2 x 3 bytes, 0xRR 0xGG 0xBB per LED)
-// If you have a different M5 encoder product (Unit, 8-Angle, etc.) adjust
-// the address and register names; everything below is isolated in
-// EncoderHat.cpp.
-constexpr uint8_t ENCODER_HAT_ADDR        = 0x5E;
+//   0x30          RGB LED, 3 bytes, BGR order (write only)
+//   0x40          reset counter (write 0x01 to zero the absolute counter)
+//   0xFE          firmware version (read only)
+//   0xFF          I2C address (read/write)
+constexpr uint8_t ENCODER_HAT_ADDR        = 0x42;
+constexpr uint8_t ENCODER_REG_ABS_COUNT   = 0x00;
 constexpr uint8_t ENCODER_REG_INC_COUNT   = 0x10;
 constexpr uint8_t ENCODER_REG_BUTTON      = 0x20;
-constexpr uint8_t ENCODER_REG_LED_RGB     = 0x70;
+constexpr uint8_t ENCODER_REG_LED_BGR     = 0x30;
+constexpr uint8_t ENCODER_REG_RESET       = 0x40;
 
 // ---------------------------------------------------------------------------
 // Throttle behaviour

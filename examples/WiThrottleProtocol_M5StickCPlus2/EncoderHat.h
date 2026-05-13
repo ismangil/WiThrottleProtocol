@@ -1,7 +1,7 @@
-// Thin I2C wrapper for the M5Stack ENCODER HAT (SKU A031).
+// Thin I2C wrapper for the M5Stack MiniEncoderC HAT (SKU U157).
 //
-// The HAT's ATtiny202 maintains a signed 16-bit incremental counter that is
-// cleared on every read, plus a momentary push-button on the encoder shaft.
+// The HAT exposes a signed int32 incremental counter at 0x10 that is cleared
+// on every read, plus a momentary push-button on the encoder shaft at 0x20.
 // This class polls both and emits debounced edge events suitable for the
 // state machine in the main sketch.
 
@@ -34,9 +34,10 @@ class EncoderHat {
     // Drains and returns the most recent button event (or None).
     ButtonEvent consumeButtonEvent();
 
-    // Optional: drive the two on-board RGB LEDs. Each value is 0xRRGGBB.
-    // Silently ignored if the HAT is not present.
-    void setLeds(uint32_t left, uint32_t right);
+    // Optional: drive the on-board RGB LED. Value is 0xRRGGBB; the driver
+    // handles the BGR byte order the HAT firmware expects. Silently ignored
+    // if the HAT is not present.
+    void setLed(uint32_t rgb888);
 
     bool isPresent() const { return present_; }
 

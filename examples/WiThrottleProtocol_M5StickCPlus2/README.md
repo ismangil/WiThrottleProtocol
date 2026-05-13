@@ -1,21 +1,23 @@
-# WiThrottleProtocol on M5StickC Plus 2 (with ENCODER HAT)
+# WiThrottleProtocol on M5StickC Plus 2 (with MiniEncoderC HAT)
 
 A complete portable WiThrottle throttle that runs on an
 [M5StickC Plus 2](https://docs.m5stack.com/en/core/M5StickC%20PLUS2)
-with the [M5Stack ENCODER HAT (A031)](https://docs.m5stack.com/en/hat/hat-encoder)
+with the [M5Stack MiniEncoderC HAT (SKU U157)](https://docs.m5stack.com/en/hat/MiniEncoderC%20Hat)
 plugged into the top 8-pin connector. Connects to JMRI (or any other
 WiThrottle server) over WiFi, lets you pick a loco from the JMRI roster on
 the device, and drives it with a centre-zero rotary throttle.
 
 ## Hardware
 
-| Part                                | Notes                              |
-|-------------------------------------|------------------------------------|
-| M5StickC Plus 2                     | ESP32-PICO-V3-02, 240x135 TFT      |
-| M5Stack ENCODER HAT                 | I2C @ 0x40, rotary + push button   |
+| Part                                | Notes                                |
+|-------------------------------------|--------------------------------------|
+| M5StickC Plus 2                     | ESP32-PICO-V3-02, 240x135 TFT        |
+| M5Stack MiniEncoderC HAT (U157)     | I2C @ 0x42, rotary + push button +   |
+|                                     | RGB LED                              |
 
-Just press the HAT onto the 8-pin connector. No soldering. The HAT receives
-SDA/SCL on GPIO 0 / GPIO 26 — the same bus M5Unified leaves alone.
+Just press the HAT onto the 8-pin connector. No soldering. The HAT speaks
+I²C on `SDA = GPIO 0` and `SCL = GPIO 26` — the same bus M5Unified leaves
+alone.
 
 ## Toolchain
 
@@ -109,7 +111,7 @@ fold the server's view back into the local slider.
 WiThrottleProtocol_M5StickCPlus2.ino  state machine, setup() and loop()
 AppDelegate.h                          WiThrottleProtocolDelegate subclass
 UI.h / UI.cpp                          M5GFX rendering helpers
-EncoderHat.h / EncoderHat.cpp          I2C driver for the ENCODER HAT
+EncoderHat.h / EncoderHat.cpp          I2C driver for the MiniEncoderC HAT
 Provision.h / Provision.cpp            SoftAP + captive portal + NVS
 config.h                               pin/I2C constants, NVS keys, tunables
 ```

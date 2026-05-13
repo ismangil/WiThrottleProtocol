@@ -1,4 +1,5 @@
-// WiThrottleProtocol portable throttle for M5StickC Plus 2 + ENCODER HAT.
+// WiThrottleProtocol portable throttle for M5StickC Plus 2 + MiniEncoderC HAT
+// (SKU U157).
 //
 // Features:
 //   * Captive-portal WiFi provisioning on first boot (or hold BtnB at power-on
@@ -556,8 +557,8 @@ void setup() {
     UI::splash("WiThrottle", "M5StickC Plus 2");
 
     if (!encoder.begin()) {
-        UI::splash("ENCODER HAT",
-                   "not detected on I2C 0x5E");
+        UI::splash("MiniEncoderC",
+                   "not detected on I2C 0x42");
         delay(2000);
     }
 
