@@ -103,9 +103,9 @@ constexpr size_t RECONNECT_BACKOFF_COUNT =
 // ---------------------------------------------------------------------------
 // UI
 // ---------------------------------------------------------------------------
-// M5StickC Plus 2 TFT is 240 wide x 135 tall when rotated to landscape.
-constexpr int16_t TFT_W = 240;
-constexpr int16_t TFT_H = 135;
+// M5StickC Plus 2 TFT is 135 wide x 240 tall in portrait.
+constexpr int16_t TFT_W = 135;
+constexpr int16_t TFT_H = 240;
 
 // Display auto-dim after this much idle time. Set to 0 to disable.
 constexpr uint32_t DISPLAY_DIM_AFTER_MS = 30000;

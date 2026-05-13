@@ -31,7 +31,7 @@ void drawHeader(const String &left, const String &right) {
 }  // namespace
 
 void begin() {
-    M5.Display.setRotation(1);   // landscape, USB-C on the right
+    M5.Display.setRotation(0);   // portrait
     M5.Display.setTextWrap(false);
     M5.Display.setBrightness(DISPLAY_BRIGHT);
     clear();
