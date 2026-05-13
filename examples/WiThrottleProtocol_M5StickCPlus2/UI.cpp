@@ -128,7 +128,40 @@ void drive(const DriveStatus &s) {
     }
     drawHeader(headerLeft, headerRight);
 
-    // Big signed speed number, centered horizontally
+    // ----- Vertical centre-zero slider on the right edge -----
+    constexpr int barW = 30;
+    constexpr int barRight = TFT_W - 4;
+    constexpr int barX = barRight - barW;
+    constexpr int barTop = 18;
+    constexpr int barBot = TFT_H - 4;
+    constexpr int barH = barBot - barTop;
+    constexpr int mid = barTop + barH / 2;
+
+    M5.Display.drawRect(barX, barTop, barW, barH, COL_DIM);
+    // Centre tick: a horizontal line across the bar
+    M5.Display.drawFastHLine(barX - 2, mid, barW + 4, COL_ZERO);
+
+    if (s.throttlePos != 0) {
+        const int halfH = barH / 2 - 2;
+        const int fillPx =
+            (int)((long)abs(s.throttlePos) * halfH / THROTTLE_MAX_SPEED);
+        const uint16_t fillCol =
+            (s.throttlePos > 0) ? COL_FWD : COL_REV;
+        if (s.throttlePos > 0) {
+            // Positive (forward) grows up from centre
+            M5.Display.fillRect(barX + 1, mid - fillPx, barW - 2, fillPx,
+                                fillCol);
+        } else {
+            // Negative (reverse) grows down from centre
+            M5.Display.fillRect(barX + 1, mid + 1, barW - 2, fillPx, fillCol);
+        }
+    }
+
+    // ----- Left content area -----
+    const int contentRight = barX - 4;
+    const int contentMidX = contentRight / 2 + 2;
+
+    // Big signed speed number, centred in the left content area
     M5.Display.setTextDatum(middle_center);
     M5.Display.setTextColor(COL_FG, COL_BG);
     M5.Display.setTextSize(4);
@@ -138,50 +171,27 @@ void drive(const DriveStatus &s) {
     } else {
         snprintf(buf, sizeof(buf), "%+d", s.throttlePos);
     }
-    M5.Display.drawString(buf, TFT_W / 2, 46);
+    M5.Display.drawString(buf, contentMidX, 46);
 
-    // Direction arrow under the number
+    // Direction arrow under the number — vertical arrows match the slider
     M5.Display.setTextSize(2);
-    const char *arrow = (s.direction == Forward) ? "->" : "<-";
+    const char *arrow = (s.direction == Forward) ? "/\\" : "\\/";
     const uint16_t dirCol = (s.direction == Forward) ? COL_FWD : COL_REV;
     M5.Display.setTextColor(dirCol, COL_BG);
-    M5.Display.drawString(arrow, TFT_W / 2, 76);
+    M5.Display.drawString(arrow, contentMidX, 78);
     if (s.polarityFlipped) {
         M5.Display.setTextColor(COL_DIM, COL_BG);
         M5.Display.setTextSize(1);
-        M5.Display.drawString("polarity flipped", TFT_W / 2, 92);
+        M5.Display.drawString("polarity flipped", contentMidX, 96);
     }
 
-    // Centre-zero slider bar
-    const int barY = 102;
-    const int barH = 14;
-    const int barX = 6;
-    const int barW = TFT_W - 12;
-    const int mid = barX + barW / 2;
-    M5.Display.drawRect(barX, barY, barW, barH, COL_DIM);
-    // Centre tick
-    M5.Display.drawFastVLine(mid, barY - 2, barH + 4, COL_ZERO);
-
-    if (s.throttlePos != 0) {
-        const int halfW = barW / 2 - 2;
-        const int fillPx =
-            (int)((long)abs(s.throttlePos) * halfW / THROTTLE_MAX_SPEED);
-        const uint16_t fillCol =
-            (s.throttlePos > 0) ? COL_FWD : COL_REV;
-        if (s.throttlePos > 0) {
-            M5.Display.fillRect(mid + 1, barY + 1, fillPx, barH - 2, fillCol);
-        } else {
-            M5.Display.fillRect(mid - fillPx, barY + 1, fillPx, barH - 2,
-                                fillCol);
-        }
-    }
-
-    // F-button mini-indicators along the bottom (F0..F9)
+    // F-button mini-indicators along the bottom of the left area (F0..F9)
     if (s.functions) {
-        const int fy = barY + barH + 3;
-        const int fw = (TFT_W - 12) / 10;
+        const int fy = TFT_H - 12;
+        const int contentW = contentRight - 4;
+        const int fw = contentW / 10;
         for (int i = 0; i < 10; i++) {
-            const int fx = 6 + i * fw;
+            const int fx = 4 + i * fw;
             uint16_t col = s.functions[i] ? COL_ACCENT : COL_DIM;
             M5.Display.drawRect(fx, fy, fw - 2, 9, col);
             if (s.functions[i]) {
