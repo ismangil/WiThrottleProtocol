@@ -119,6 +119,14 @@ void sendThrottleUpdate() {
     wit.setSpeed(THROTTLE_SLOT, magnitude);
 }
 
+// Drive the MiniEncoderC's RGB LED to mirror the throttle direction:
+// green = forward, red = reverse, off = stopped/centred.
+void updateThrottleLed() {
+    if (throttlePos > 0)      encoder.setLed(0x002000);  // dim green
+    else if (throttlePos < 0) encoder.setLed(0x200000);  // dim red
+    else                      encoder.setLed(0x000000);  // off
+}
+
 void applyDelta(int16_t rawDelta) {
     if (rawDelta == 0) return;
     int16_t delta = polarityFlipped ? -rawDelta : rawDelta;
@@ -144,6 +152,7 @@ void applyDelta(int16_t rawDelta) {
         throttlePos = (int16_t)next;
     }
     sendThrottleUpdate();
+    updateThrottleLed();
     needRepaint = true;
 }
 
@@ -160,6 +169,7 @@ void absorbMirroredState() {
         ((throttlePos >= 0) == (delegateImpl.mirroredDirection == Forward));
     if (!localMatches) {
         throttlePos = signed_;
+        updateThrottleLed();
     }
     delegateImpl.dirty = false;
     needRepaint = true;
@@ -207,6 +217,7 @@ void enterRoster() {
     state = AppState::Roster;
     rosterIndex = 0;
     rosterScroll = 0;
+    encoder.setLed(0x000000);  // not actively driving
     needRepaint = true;
 }
 
@@ -214,6 +225,7 @@ void enterDrive() {
     state = AppState::Drive;
     throttlePos = 0;
     sendThrottleUpdate();
+    updateThrottleLed();
     needRepaint = true;
 }
 
@@ -231,6 +243,7 @@ void enterReconnect() {
     state = AppState::Reconnect;
     backoffStep = 0;
     lastConnectAttempt = 0;
+    encoder.setLed(0x000000);  // disconnected: no throttle authority
     needRepaint = true;
 }
 
@@ -411,12 +424,14 @@ void tickDrive() {
         // E-stop: snap to zero and tell server
         throttlePos = 0;
         wit.emergencyStop(THROTTLE_SLOT);
+        updateThrottleLed();
         needRepaint = true;
     } else if (ev == EncoderHat::ButtonEvent::LongPress) {
         noteInput();
         // Gentle centre: ramp to zero in one step (no e-stop)
         throttlePos = 0;
         sendThrottleUpdate();
+        updateThrottleLed();
         needRepaint = true;
     }
 
