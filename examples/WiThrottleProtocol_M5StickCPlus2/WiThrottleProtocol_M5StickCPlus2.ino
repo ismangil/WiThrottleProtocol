@@ -223,8 +223,6 @@ void enterRoster() {
 
 void enterDrive() {
     state = AppState::Drive;
-    throttlePos = 0;
-    sendThrottleUpdate();
     updateThrottleLed();
     needRepaint = true;
 }

@@ -51,10 +51,6 @@ constexpr int16_t THROTTLE_STEP_FAST = 4;
 constexpr uint32_t THROTTLE_FAST_WINDOW_MS = 60; // detents arriving within
                                                   // this window count as fast
 
-// Encoder poll cadence (ms). 50 Hz is plenty for human input and leaves the
-// CPU free for wiThrottleProtocol.check() and TFT draws.
-constexpr uint32_t ENCODER_POLL_MS = 20;
-
 // Button long-press threshold (ms). Same for encoder push and BtnA/BtnB.
 constexpr uint32_t LONG_PRESS_MS = 1000;
 

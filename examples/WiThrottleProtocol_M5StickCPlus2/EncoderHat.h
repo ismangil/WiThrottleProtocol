@@ -35,8 +35,8 @@ class EncoderHat {
     ButtonEvent consumeButtonEvent();
 
     // Optional: drive the on-board RGB LED. Value is 0xRRGGBB; the driver
-    // handles the BGR byte order the HAT firmware expects. Silently ignored
-    // if the HAT is not present.
+    // sends the bytes on the wire in RGB order. Silently ignored if the HAT
+    // is not present.
     void setLed(uint32_t rgb888);
 
     bool isPresent() const { return present_; }
