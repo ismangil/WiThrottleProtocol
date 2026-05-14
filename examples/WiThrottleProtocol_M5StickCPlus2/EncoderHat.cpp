@@ -99,11 +99,12 @@ EncoderHat::ButtonEvent EncoderHat::consumeButtonEvent() {
 
 void EncoderHat::setLed(uint32_t rgb888) {
     if (!present_) return;
-    // MiniEncoderC firmware expects 3 bytes in BGR order (B, G, R).
+    // MiniEncoderC firmware expects 3 bytes in RGB order on the wire
+    // (high byte of 0xRRGGBB first).
     uint8_t buf[3] = {
-        (uint8_t)(rgb888 & 0xFF),         // B
-        (uint8_t)((rgb888 >> 8) & 0xFF),  // G
         (uint8_t)((rgb888 >> 16) & 0xFF), // R
+        (uint8_t)((rgb888 >> 8) & 0xFF),  // G
+        (uint8_t)(rgb888 & 0xFF),         // B
     };
-    writeReg(wire_, ENCODER_REG_LED_BGR, buf, sizeof(buf));
+    writeReg(wire_, ENCODER_REG_LED, buf, sizeof(buf));
 }
