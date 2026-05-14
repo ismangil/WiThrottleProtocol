@@ -11,67 +11,93 @@ the device, and drives it with a centre-zero rotary throttle.
 
 | Part                                | Notes                                |
 |-------------------------------------|--------------------------------------|
-| M5StickC Plus 2                     | ESP32-PICO-V3-02, 240x135 TFT        |
-| M5Stack MiniEncoderC HAT (U157)     | I2C @ 0x42, rotary + push button +   |
-|                                     | RGB LED                              |
+| M5StickC Plus 2                     | ESP32-PICO-V3-02, 135x240 TFT in     |
+|                                     | portrait, 200 mAh battery            |
+| M5Stack MiniEncoderC HAT (U157)     | I2C @ 0x42, rotary encoder + push    |
+|                                     | button + single RGB LED              |
 
-Just press the HAT onto the 8-pin connector. No soldering. The HAT speaks
-I²C on `SDA = GPIO 0` and `SCL = GPIO 26` — the same bus M5Unified leaves
-alone.
+Press the HAT onto the 8-pin connector — no soldering. The HAT speaks I²C on
+`SDA = GPIO 0` and `SCL = GPIO 26`, the bus M5Unified leaves alone.
 
-## Toolchain
+## Getting started
 
-This sketch is an Arduino sketch and builds with either Arduino IDE or
-PlatformIO. It targets the standard `m5stack-stickc-plus2` board.
+The whole flow, from a fresh M5StickC Plus 2 to driving a loco, takes about
+five minutes.
 
-### Required libraries
+### 1. Install the toolchain
 
-- `M5Unified` — pulled with `M5GFX`
-- `WiThrottleProtocol` (this library)
-- Everything else (`WiFi`, `WebServer`, `DNSServer`, `Preferences`, `ESPmDNS`,
-  `Wire`) ships with the Arduino-ESP32 core.
+Pick one — both work. PlatformIO gives you headless builds and faster
+flashing; Arduino IDE has a friendlier UI for tweaking single files.
 
-### PlatformIO
+**PlatformIO** (recommended for repeat builds):
 
-A minimal `platformio.ini` for this sketch:
+Create `platformio.ini` in a folder containing a copy of this sketch:
 
 ```ini
-[env:m5stack-stickc-plus2]
+[env:m5stickc-plus2]
 platform = espressif32
-board = m5stick-c
+board = m5stick-c-plus2          ; needs platform-espressif32 >= 6.6.0
 framework = arduino
-board_build.mcu = esp32
-upload_speed = 1500000
 monitor_speed = 115200
+upload_speed = 1500000
 lib_deps =
     m5stack/M5Unified
     https://github.com/flash62au/WiThrottleProtocol.git
 build_flags = -DCORE_DEBUG_LEVEL=0
 ```
 
-### Arduino IDE
+If your platform-espressif32 is older and doesn't have the `m5stick-c-plus2`
+board, use `board = m5stick-c-plus` and add
+`board_build.partitions = default.csv` — the binary is small enough.
 
-1. Install board package "M5Stack" via Boards Manager.
-2. Select board "M5StickC-Plus2".
-3. Install libraries: `M5Unified`, `WiThrottleProtocol`.
-4. Open this folder as a sketch (the `.ino` plus the `.h/.cpp` siblings are
-   compiled together automatically).
+**Arduino IDE 2.x**:
 
-## First boot
+1. Boards Manager → install **M5Stack** (the package by M5Stack
+   Technology Co.). Version 2.1.0 or newer adds the "M5StickC Plus 2" entry.
+2. Tools → Board → M5Stack → **M5StickC Plus 2**.
+3. Library Manager → install **M5Unified** and **WiThrottleProtocol**.
+4. Open `WiThrottleProtocol_M5StickCPlus2.ino`. The IDE compiles every `.h`
+   / `.cpp` in the sketch folder automatically.
 
-1. The device powers on and immediately starts an open WiFi access point
-   named `WiThrottle-XXXX` (last four hex digits of the MAC).
-2. Connect a phone or laptop to that SSID. Most OSes pop a captive-portal
+### 2. Flash the firmware
+
+USB-C, hold the power button (the red one) for ~2 s to power on, then upload
+from your IDE. Reset (six-second hold) if the bootloader doesn't catch the
+first time. You should see a "WiThrottle / M5StickC Plus 2" splash.
+
+### 3. Connect to your WiFi (first boot)
+
+The device starts an open WiFi access point named `WiThrottle-XXXX` (last
+four hex digits of the MAC) and shows the SSID + portal URL on the TFT.
+
+1. On a phone or laptop, join that SSID. Most OSes pop a captive-portal
    sheet; if not, browse to `http://192.168.4.1/`.
-3. Pick your home WiFi network from the scan list. Enter the password.
-   Optionally enter a server host/port (leave blank to auto-discover JMRI
-   via mDNS).
-4. Hit **Save & connect**. The device reboots and connects to your WiFi.
+2. Pick your home WiFi network from the scan list, enter the password.
+3. **Server host / port** — leave blank to auto-discover JMRI via mDNS, or
+   enter `192.168.x.y` and `12090` to skip discovery.
+4. Press **Save & connect**. The device reboots and connects.
 
-Hold **BtnB** (the small side button) while powering on to clear stored
-credentials and re-run setup.
+If you want to redo this later, **hold BtnB** (the side button) while
+powering on — that clears the stored credentials.
 
-## Driving
+### 4. Start JMRI's WiThrottle server
+
+In JMRI's main menu: **Tools → Throttles → Start WiThrottle Server**. JMRI
+advertises itself via mDNS, so the throttle finds it automatically on the
+same subnet. Make sure your JMRI host is on the same WiFi network and on
+**channel 10 or below** (the ESP32 can't see higher 2.4 GHz channels).
+
+### 5. Pick a loco and drive
+
+You'll land in the roster picker. Rotate the encoder to highlight a loco
+and **push** the encoder to acquire it. After a brief "Acquiring…" splash
+the drive view appears, with a centre-zero vertical slider on the right.
+
+Rotate clockwise to add forward speed, counter-clockwise for reverse — the
+encoder LED turns green or red to match. Crossing zero automatically issues
+a stop-then-flip-direction. Push the encoder to e-stop.
+
+## Controls
 
 | Input                          | Action                                              |
 |--------------------------------|-----------------------------------------------------|
@@ -79,11 +105,12 @@ credentials and re-run setup.
 |                                | adds forward speed; CCW from zero adds reverse.     |
 | Encoder push (short)           | E-stop — throttle snaps to centre and sends         |
 |                                | `emergencyStop` to the server.                      |
-| Encoder push (long, 1 s)       | Gentle centre — sets speed to 0 without e-stop.     |
+| Encoder push (long, 1 s)       | Soft centre — sets speed to 0 without e-stop.       |
+| Encoder LED                    | Green = forward, red = reverse, off = stopped.      |
 | BtnA (front, short)            | Toggle F0 (lights).                                 |
-| BtnA (long)                    | Flip polarity (swap CW/CCW meaning, in case the     |
-|                                | loco is facing the other way). Saved to NVS.        |
-| BtnB (short)                   | Open the F1-F12 function grid.                      |
+| BtnA (long)                    | Flip polarity (swap CW/CCW meaning, for locos       |
+|                                | facing the other way). Persisted to NVS.            |
+| BtnB (side, short)             | Open the F1–F12 function grid (BtnA returns).       |
 | BtnB (long)                    | Release the loco and return to the roster picker.   |
 | BtnB (held at boot)            | Clear NVS and re-enter setup.                       |
 
@@ -95,15 +122,35 @@ another client (e.g. WiThrottle on iOS) changes the loco — the
 `receivedSpeedMultiThrottle` / `receivedDirectionMultiThrottle` callbacks
 fold the server's view back into the local slider.
 
+## Troubleshooting
+
+- **Splash says "MiniEncoderC not detected on I2C 0x42"** — the HAT isn't
+  seated, or you have a different M5 encoder. Pop it on firmly. If you
+  swap to the original ENCODER HAT (A031) you'll need to change
+  `ENCODER_HAT_ADDR` and register offsets in `config.h`.
+- **WiFi setup loops back to the captive portal** — verify your AP is on
+  2.4 GHz and channel 10 or below. The ESP32 silently refuses higher
+  channels.
+- **Roster never loads** — the throttle connected to *something* on port
+  12090 that wasn't JMRI WiThrottle. Hold BtnB at boot and enter a manual
+  host explicitly.
+- **Throttle disconnects after a minute of idle** — should not happen
+  (WiThrottleProtocol sends heartbeats automatically). If it does, check
+  JMRI's WiThrottle preferences for a heartbeat interval > 0.
+- **LED is too bright** — adjust the `0x002000` / `0x200000` levels in
+  `updateThrottleLed()` in the `.ino`.
+
 ## Constraints worth knowing
 
-- The ESP32 only supports 2.4 GHz WiFi and struggles above channel 10. The
+- ESP32 only supports 2.4 GHz WiFi and struggles above channel 10. The
   provisioning portal flags any AP above ch 10.
 - The built-in 200 mAh battery gives roughly three to four hours of
   continuous use. The TFT auto-dims after 30 s of input inactivity.
 - Only the first WiThrottle slot (`'0'`) is used. Multi-loco consists are
   still supported because the WiThrottle protocol lets you add multiple
   locos to the same slot.
+- Roster, turnouts and routes loaded from JMRI are kept in RAM. The MAX
+  loco roster size is bounded only by free heap (~200 kB on this part).
 
 ## Files
 
