@@ -150,15 +150,20 @@ class AppDelegate : public WiThrottleProtocolDelegate {
     }
 
     // ---- turnouts ----
+    // The library dispatches order is the reverse of the roster: each
+    // receivedTurnoutEntry() call comes first, then receivedTurnoutEntries()
+    // arrives at the end as a "list finished" signal. We therefore clear on
+    // the first entry (index == 0) of a fresh list, never on the count.
     void receivedTurnoutEntries(int n) override {
         expectedTurnoutSize = n;
-        turnouts.clear();
-        turnouts.reserve(n);
-        turnoutsPopulated = (n == 0);
+        turnoutsPopulated = (n == 0 || (int)turnouts.size() >= n);
         dirty = true;
     }
-    void receivedTurnoutEntry(int /*index*/, String sysName, String userName,
+    void receivedTurnoutEntry(int index, String sysName, String userName,
                               int state) override {
+        if (index == 0) {
+            turnouts.clear();
+        }
         TurnoutEntry t;
         t.sysName = sysName;
         t.userName = userName;
@@ -183,13 +188,14 @@ class AppDelegate : public WiThrottleProtocolDelegate {
     // ---- routes ----
     void receivedRouteEntries(int n) override {
         expectedRouteSize = n;
-        routes.clear();
-        routes.reserve(n);
-        routesPopulated = (n == 0);
+        routesPopulated = (n == 0 || (int)routes.size() >= n);
         dirty = true;
     }
-    void receivedRouteEntry(int /*index*/, String sysName, String userName,
+    void receivedRouteEntry(int index, String sysName, String userName,
                             int state) override {
+        if (index == 0) {
+            routes.clear();
+        }
         RouteEntry r;
         r.sysName = sysName;
         r.userName = userName;

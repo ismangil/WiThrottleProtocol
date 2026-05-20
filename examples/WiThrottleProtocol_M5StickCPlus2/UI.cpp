@@ -337,6 +337,9 @@ void layout(const std::vector<TurnoutEntry> &turnouts,
     drawHeader(title, counts);
 
     // Tab strip just below the header so the inactive tab stays visible.
+    // The active tab gets a ">" marker; the inactive tab is dimmed and
+    // labelled with the long-press hint so the operator can find the
+    // toggle without guessing.
     constexpr int tabH = 14;
     const int tabY = HEADER_H;
     const int halfW = TFT_W / 2;
@@ -347,14 +350,28 @@ void layout(const std::vector<TurnoutEntry> &turnouts,
     M5.Display.setTextSize(1);
     M5.Display.setTextDatum(middle_center);
     M5.Display.setTextColor(COL_BG, onTurnouts ? COL_ACCENT : COL_DIM);
-    M5.Display.drawString("Turnouts", halfW / 2, tabY + tabH / 2);
+    M5.Display.drawString(onTurnouts ? ">Turnouts" : "Turnouts",
+                          halfW / 2, tabY + tabH / 2);
     M5.Display.setTextColor(COL_BG, onTurnouts ? COL_DIM : COL_ACCENT);
-    M5.Display.drawString("Routes", halfW + halfW / 2, tabY + tabH / 2);
+    M5.Display.drawString(onTurnouts ? "Routes" : ">Routes",
+                          halfW + halfW / 2, tabY + tabH / 2);
 
-    // List rows below the tab strip.
+    // Footer: a one-line hint anchored to the bottom of the screen so the
+    // user can discover the tab toggle.
+    constexpr int footerH = 10;
+    const int footerY = TFT_H - footerH;
+    M5.Display.fillRect(0, footerY, TFT_W, footerH, COL_BG);
+    M5.Display.setTextSize(1);
+    M5.Display.setTextDatum(middle_center);
+    M5.Display.setTextColor(COL_DIM, COL_BG);
+    M5.Display.drawString("hold push: switch tab",
+                          TFT_W / 2, footerY + footerH / 2);
+
+    // List rows below the tab strip, above the footer hint.
     constexpr int rowH = 26;
     const int listTop = HEADER_H + tabH + 2;
-    const int visibleRows = (TFT_H - listTop) / rowH;
+    const int listBottom = footerY - 2;
+    const int visibleRows = (listBottom - listTop) / rowH;
     const int total = onTurnouts ? (int)turnouts.size() : (int)routes.size();
 
     if (total == 0) {
