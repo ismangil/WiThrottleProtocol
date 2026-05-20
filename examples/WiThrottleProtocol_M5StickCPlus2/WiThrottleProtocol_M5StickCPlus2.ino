@@ -41,6 +41,7 @@ enum class AppState : uint8_t {
     Roster,
     Drive,
     Functions,
+    Layout,
     Status,
     Reconnect,
 };
@@ -71,6 +72,13 @@ int      rosterScroll = 0;
 
 // Functions view state
 uint8_t  fnSelected = 1; // F1..F12
+
+// Layout (turnouts/routes) view state
+UI::LayoutTab layoutTab = UI::LayoutTab::Turnouts;
+int      turnoutIndex = 0;
+int      turnoutScroll = 0;
+int      routeIndex = 0;
+int      routeScroll = 0;
 
 // Reconnect ladder
 size_t   backoffStep = 0;
@@ -229,6 +237,11 @@ void enterDrive() {
 
 void enterFunctions() {
     state = AppState::Functions;
+    needRepaint = true;
+}
+
+void enterLayout() {
+    state = AppState::Layout;
     needRepaint = true;
 }
 
@@ -489,7 +502,7 @@ void tickFunctions() {
     M5.update();
     if (M5.BtnB.wasReleased()) {
         noteInput();
-        enterStatus();
+        enterLayout();
         return;
     }
     if (M5.BtnA.wasReleased()) {
@@ -500,6 +513,83 @@ void tickFunctions() {
     if (delegateImpl.dirty) { delegateImpl.dirty = false; needRepaint = true; }
     if (needRepaint) {
         UI::functions(delegateImpl.mirroredFunctions, fnSelected);
+        needRepaint = false;
+    }
+}
+
+void tickLayout() {
+    const int16_t delta = encoder.consumeDelta();
+    if (delta != 0) {
+        noteInput();
+        if (layoutTab == UI::LayoutTab::Turnouts) {
+            const int n = (int)delegateImpl.turnouts.size();
+            if (n > 0) {
+                turnoutIndex = (turnoutIndex + delta) % n;
+                if (turnoutIndex < 0) turnoutIndex += n;
+            }
+        } else {
+            const int n = (int)delegateImpl.routes.size();
+            if (n > 0) {
+                routeIndex = (routeIndex + delta) % n;
+                if (routeIndex < 0) routeIndex += n;
+            }
+        }
+        needRepaint = true;
+    }
+
+    const auto ev = encoder.consumeButtonEvent();
+    if (ev == EncoderHat::ButtonEvent::ShortPress) {
+        noteInput();
+        if (layoutTab == UI::LayoutTab::Turnouts) {
+            if (turnoutIndex >= 0 &&
+                turnoutIndex < (int)delegateImpl.turnouts.size()) {
+                TurnoutEntry &t = delegateImpl.turnouts[turnoutIndex];
+                wit.setTurnout(t.sysName, TurnoutToggle);
+                // Optimistic local flip so the UI feels instant.
+                if      (t.state == TurnoutClosed) t.state = TurnoutThrown;
+                else if (t.state == TurnoutThrown) t.state = TurnoutClosed;
+                needRepaint = true;
+            }
+        } else {
+            if (routeIndex >= 0 &&
+                routeIndex < (int)delegateImpl.routes.size()) {
+                const RouteEntry &r = delegateImpl.routes[routeIndex];
+                wit.setRoute(r.sysName);
+                // Brief acknowledgement banner — WiThrottle has no "route
+                // activated" callback we can rely on.
+                UI::layout(delegateImpl.turnouts, delegateImpl.routes,
+                           layoutTab, turnoutIndex, turnoutScroll,
+                           routeIndex, routeScroll);
+                UI::banner("Route activated", TFT_GREEN);
+                delay(500);
+                needRepaint = true;
+            }
+        }
+    } else if (ev == EncoderHat::ButtonEvent::LongPress) {
+        noteInput();
+        layoutTab = (layoutTab == UI::LayoutTab::Turnouts)
+                        ? UI::LayoutTab::Routes
+                        : UI::LayoutTab::Turnouts;
+        needRepaint = true;
+    }
+
+    M5.update();
+    if (M5.BtnB.wasReleased()) {
+        noteInput();
+        enterStatus();
+        return;
+    }
+    if (M5.BtnA.wasReleased()) {
+        noteInput();
+        enterDrive();
+        return;
+    }
+
+    if (delegateImpl.dirty) { delegateImpl.dirty = false; needRepaint = true; }
+    if (needRepaint) {
+        UI::layout(delegateImpl.turnouts, delegateImpl.routes,
+                   layoutTab, turnoutIndex, turnoutScroll,
+                   routeIndex, routeScroll);
         needRepaint = false;
     }
 }
@@ -610,7 +700,8 @@ void loop() {
 
     // Detect server-side disconnects from any state that owns a TCP client.
     if (state == AppState::Roster || state == AppState::Drive ||
-        state == AppState::Functions || state == AppState::Status) {
+        state == AppState::Functions || state == AppState::Layout ||
+        state == AppState::Status) {
         if (!tcpClient.connected()) {
             enterReconnect();
         }
@@ -624,6 +715,7 @@ void loop() {
         case AppState::Roster:          tickRoster(); break;
         case AppState::Drive:           tickDrive(); break;
         case AppState::Functions:       tickFunctions(); break;
+        case AppState::Layout:          tickLayout(); break;
         case AppState::Status:          tickStatus(); break;
         case AppState::Reconnect:       tickReconnect(); break;
         case AppState::Boot:            break;

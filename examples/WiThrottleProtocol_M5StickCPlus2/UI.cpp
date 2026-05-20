@@ -289,6 +289,104 @@ void functions(const bool *fnState, uint8_t selected) {
     }
 }
 
+namespace {
+
+const char *turnoutGlyph(TurnoutState st) {
+    switch (st) {
+        case TurnoutClosed:       return "C";
+        case TurnoutThrown:       return "T";
+        case TurnoutInconsistent: return "!";
+        case TurnoutUnknown:
+        default:                  return "?";
+    }
+}
+
+// Draw a single highlightable row of size-2 text with an optional
+// right-aligned glyph. Used by both list tabs of the Layout screen.
+void drawLayoutRow(int y, int rowH, bool selected, const String &left,
+                   const String &right) {
+    const uint16_t bg = selected ? COL_ACCENT : COL_BG;
+    const uint16_t fg = selected ? COL_BG : COL_FG;
+    M5.Display.fillRect(0, y, TFT_W, rowH - 2, bg);
+    M5.Display.setTextColor(fg, bg);
+    M5.Display.setTextSize(2);
+    String r = right;
+    const int rW = M5.Display.textWidth(r);
+    String l = left;
+    truncateToWidth(l, TFT_W - rW - 12);
+    M5.Display.setTextDatum(top_left);
+    M5.Display.drawString(l, 4, y + 4);
+    if (r.length()) {
+        M5.Display.setTextDatum(top_right);
+        M5.Display.drawString(r, TFT_W - 4, y + 4);
+    }
+}
+
+}  // namespace
+
+void layout(const std::vector<TurnoutEntry> &turnouts,
+            const std::vector<RouteEntry> &routes,
+            LayoutTab tab,
+            int turnoutIdx, int &turnoutScroll,
+            int routeIdx, int &routeScroll) {
+    clear();
+    const bool onTurnouts = (tab == LayoutTab::Turnouts);
+    const String title = onTurnouts ? "Turnouts" : "Routes";
+    String counts = "T:" + String((int)turnouts.size()) +
+                    " R:" + String((int)routes.size());
+    drawHeader(title, counts);
+
+    // Tab strip just below the header so the inactive tab stays visible.
+    constexpr int tabH = 14;
+    const int tabY = HEADER_H;
+    const int halfW = TFT_W / 2;
+    M5.Display.fillRect(0, tabY, halfW, tabH,
+                        onTurnouts ? COL_ACCENT : COL_DIM);
+    M5.Display.fillRect(halfW, tabY, TFT_W - halfW, tabH,
+                        onTurnouts ? COL_DIM : COL_ACCENT);
+    M5.Display.setTextSize(1);
+    M5.Display.setTextDatum(middle_center);
+    M5.Display.setTextColor(COL_BG, onTurnouts ? COL_ACCENT : COL_DIM);
+    M5.Display.drawString("Turnouts", halfW / 2, tabY + tabH / 2);
+    M5.Display.setTextColor(COL_BG, onTurnouts ? COL_DIM : COL_ACCENT);
+    M5.Display.drawString("Routes", halfW + halfW / 2, tabY + tabH / 2);
+
+    // List rows below the tab strip.
+    constexpr int rowH = 26;
+    const int listTop = HEADER_H + tabH + 2;
+    const int visibleRows = (TFT_H - listTop) / rowH;
+    const int total = onTurnouts ? (int)turnouts.size() : (int)routes.size();
+
+    if (total == 0) {
+        const int wrapW = TFT_W - 8;
+        const String msg = onTurnouts ? "No turnouts" : "No routes";
+        drawWrappedCentered(msg, listTop + 20, wrapW, 2, COL_DIM, COL_BG);
+        return;
+    }
+
+    int &scroll = onTurnouts ? turnoutScroll : routeScroll;
+    const int sel = onTurnouts ? turnoutIdx : routeIdx;
+    if (sel < scroll) scroll = sel;
+    if (sel >= scroll + visibleRows) scroll = sel - visibleRows + 1;
+    if (scroll < 0) scroll = 0;
+
+    for (int row = 0; row < visibleRows; row++) {
+        const int idx = scroll + row;
+        if (idx >= total) break;
+        const int y = listTop + row * rowH;
+        const bool isSel = (idx == sel);
+        if (onTurnouts) {
+            const TurnoutEntry &t = turnouts[idx];
+            const String label = t.userName.length() ? t.userName : t.sysName;
+            drawLayoutRow(y, rowH, isSel, label, turnoutGlyph(t.state));
+        } else {
+            const RouteEntry &r = routes[idx];
+            const String label = r.userName.length() ? r.userName : r.sysName;
+            drawLayoutRow(y, rowH, isSel, label, "");
+        }
+    }
+}
+
 void statusScreen(const StatusInfo &s) {
     clear();
     drawHeader("Status", "back");

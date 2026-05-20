@@ -97,6 +97,13 @@ Rotate clockwise to add forward speed, counter-clockwise for reverse — the
 encoder LED turns green or red to match. Crossing zero automatically issues
 a stop-then-flip-direction. Push the encoder to e-stop.
 
+Press **BtnB** to cycle through additional screens: Functions (F1–F12),
+**Layout** (turnouts and routes from JMRI), and Status. **BtnA** returns to
+Drive from any of them. On the Layout screen, the encoder selects an item
+within the active tab, encoder short-press activates it (toggles a turnout
+or fires a route), and encoder long-press flips between the Turnouts and
+Routes tabs.
+
 ## Controls
 
 | Input                          | Action                                              |
@@ -110,9 +117,19 @@ a stop-then-flip-direction. Push the encoder to e-stop.
 | BtnA (front, short)            | Toggle F0 (lights).                                 |
 | BtnA (long)                    | Flip polarity (swap CW/CCW meaning, for locos       |
 |                                | facing the other way). Persisted to NVS.            |
-| BtnB (side, short)             | Open the F1–F12 function grid (BtnA returns).       |
+| BtnB (side, short)             | Cycle screens: Drive → Functions → Layout → Status. |
 | BtnB (long)                    | Release the loco and return to the roster picker.   |
 | BtnB (held at boot)            | Clear NVS and re-enter setup.                       |
+
+Layout screen controls (turnouts and routes):
+
+| Input                          | Action                                              |
+|--------------------------------|-----------------------------------------------------|
+| Encoder rotate                 | Move highlight within the active tab.               |
+| Encoder push (short)           | Turnout: toggle Close ↔ Throw via `setTurnout`.     |
+|                                | Route: activate via `setRoute`.                     |
+| Encoder push (long, 1 s)       | Flip tab: Turnouts ↔ Routes.                        |
+| BtnA                           | Back to Drive (loco stays acquired).                |
 
 Zero-crossings work like this: as you turn through zero the sketch snaps
 the throttle to exactly 0 for one detent and sends `setSpeed(0)`. The next

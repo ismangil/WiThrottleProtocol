@@ -50,6 +50,15 @@ void drive(const DriveStatus &s);
 // number (1..12).
 void functions(const bool *fnState, uint8_t selected);
 
+// Layout view: turnouts and routes on one screen with a tab toggle.
+enum class LayoutTab : uint8_t { Turnouts, Routes };
+
+void layout(const std::vector<TurnoutEntry> &turnouts,
+            const std::vector<RouteEntry> &routes,
+            LayoutTab tab,
+            int turnoutIdx, int &turnoutScroll,
+            int routeIdx, int &routeScroll);
+
 // Status / about screen: WiFi RSSI, IP, server host, version, heartbeat,
 // battery, mode, build date.
 struct StatusInfo {

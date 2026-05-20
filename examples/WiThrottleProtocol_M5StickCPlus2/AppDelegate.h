@@ -21,6 +21,18 @@ struct RosterEntry {
     }
 };
 
+struct TurnoutEntry {
+    String       sysName;   // e.g. "LT92" — passed to setTurnout()
+    String       userName;  // friendly label for the UI
+    TurnoutState state = TurnoutUnknown;
+};
+
+struct RouteEntry {
+    String     sysName;     // e.g. "IO:AUTO:0008" — passed to setRoute()
+    String     userName;
+    RouteState state = RouteInconsistent;
+};
+
 class AppDelegate : public WiThrottleProtocolDelegate {
   public:
     // ---- server-pushed state (read-only from the sketch's POV) ----
@@ -36,6 +48,15 @@ class AppDelegate : public WiThrottleProtocolDelegate {
     int     expectedRosterSize = -1;
     std::vector<RosterEntry> roster;
     bool    rosterPopulated = false;
+
+    // Turnout / route buffering. The library does not keep these for us.
+    int     expectedTurnoutSize = -1;
+    std::vector<TurnoutEntry> turnouts;
+    bool    turnoutsPopulated = false;
+
+    int     expectedRouteSize = -1;
+    std::vector<RouteEntry> routes;
+    bool    routesPopulated = false;
 
     // Mirror of throttle slot state (we only use slot THROTTLE_SLOT here).
     int       mirroredSpeed = 0;
@@ -126,5 +147,67 @@ class AppDelegate : public WiThrottleProtocolDelegate {
         if (multiThrottle != THROTTLE_SLOT) return;
         if (func < MAX_FUNCTIONS) mirroredFunctions[func] = state;
         dirty = true;
+    }
+
+    // ---- turnouts ----
+    void receivedTurnoutEntries(int n) override {
+        expectedTurnoutSize = n;
+        turnouts.clear();
+        turnouts.reserve(n);
+        turnoutsPopulated = (n == 0);
+        dirty = true;
+    }
+    void receivedTurnoutEntry(int /*index*/, String sysName, String userName,
+                              int state) override {
+        TurnoutEntry t;
+        t.sysName = sysName;
+        t.userName = userName;
+        t.state = (TurnoutState)state;
+        turnouts.push_back(t);
+        if (expectedTurnoutSize > 0 &&
+            (int)turnouts.size() >= expectedTurnoutSize) {
+            turnoutsPopulated = true;
+        }
+        dirty = true;
+    }
+    void receivedTurnoutAction(String systemName, TurnoutState state) override {
+        for (auto &t : turnouts) {
+            if (t.sysName == systemName) {
+                t.state = state;
+                dirty = true;
+                return;
+            }
+        }
+    }
+
+    // ---- routes ----
+    void receivedRouteEntries(int n) override {
+        expectedRouteSize = n;
+        routes.clear();
+        routes.reserve(n);
+        routesPopulated = (n == 0);
+        dirty = true;
+    }
+    void receivedRouteEntry(int /*index*/, String sysName, String userName,
+                            int state) override {
+        RouteEntry r;
+        r.sysName = sysName;
+        r.userName = userName;
+        r.state = (RouteState)state;
+        routes.push_back(r);
+        if (expectedRouteSize > 0 &&
+            (int)routes.size() >= expectedRouteSize) {
+            routesPopulated = true;
+        }
+        dirty = true;
+    }
+    void receivedRouteAction(String systemName, RouteState state) override {
+        for (auto &r : routes) {
+            if (r.sysName == systemName) {
+                r.state = state;
+                dirty = true;
+                return;
+            }
+        }
     }
 };
