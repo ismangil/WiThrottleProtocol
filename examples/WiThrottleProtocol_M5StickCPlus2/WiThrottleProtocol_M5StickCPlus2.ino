@@ -69,6 +69,8 @@ bool     polarityFlipped = false;  // from NVS, per-device
 // Roster picker state
 int      rosterIndex = 0;
 int      rosterScroll = 0;
+int      rosterDeltaAccum = 0;     // accumulator: 2 detents = 1 row move
+constexpr int ROSTER_DETENTS_PER_ROW = 2;
 
 // Functions view state
 uint8_t  fnSelected = 1; // F1..F12
@@ -225,6 +227,7 @@ void enterRoster() {
     state = AppState::Roster;
     rosterIndex = 0;
     rosterScroll = 0;
+    rosterDeltaAccum = 0;
     encoder.setLed(0x000000);  // not actively driving
     needRepaint = true;
 }
@@ -355,15 +358,30 @@ void tickConnectThrottle() {
 }
 
 void tickRoster() {
-    // Pull encoder
+    // Pull encoder. The picker needs to feel deliberate — a single detent
+    // nudge while reaching for the push button shouldn't slip the selection
+    // onto the next loco. Accumulate detents and only step when we have at
+    // least ROSTER_DETENTS_PER_ROW worth in either direction.
     const int16_t delta = encoder.consumeDelta();
     if (delta != 0) {
         noteInput();
+        rosterDeltaAccum += delta;
         const int n = (int)delegateImpl.roster.size();
         if (n > 0) {
-            rosterIndex = (rosterIndex + delta) % n;
-            if (rosterIndex < 0) rosterIndex += n;
-            needRepaint = true;
+            int step = 0;
+            while (rosterDeltaAccum >= ROSTER_DETENTS_PER_ROW) {
+                rosterDeltaAccum -= ROSTER_DETENTS_PER_ROW;
+                step++;
+            }
+            while (rosterDeltaAccum <= -ROSTER_DETENTS_PER_ROW) {
+                rosterDeltaAccum += ROSTER_DETENTS_PER_ROW;
+                step--;
+            }
+            if (step != 0) {
+                rosterIndex = (rosterIndex + step) % n;
+                if (rosterIndex < 0) rosterIndex += n;
+                needRepaint = true;
+            }
         }
     }
     const auto ev = encoder.consumeButtonEvent();

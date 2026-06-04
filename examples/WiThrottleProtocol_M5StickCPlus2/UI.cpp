@@ -137,8 +137,10 @@ void roster(const std::vector<RosterEntry> &entries, int selectedIndex,
     clear();
     drawHeader("Pick loco", String(entries.size()));
 
-    constexpr int rowH = 26;
-    const int top = HEADER_H + 2;
+    constexpr int rowH = 32;        // generous row height for fat fingers
+    constexpr int innerH = 26;      // leaves a 6 px gap between rows
+    constexpr int accentW = 5;      // left-edge marker on the selected row
+    const int top = HEADER_H + 4;
     const int visibleRows = (TFT_H - top) / rowH;
 
     if (selectedIndex < scrollOffset) scrollOffset = selectedIndex;
@@ -154,19 +156,30 @@ void roster(const std::vector<RosterEntry> &entries, int selectedIndex,
         const bool sel = (idx == selectedIndex);
         const uint16_t bg = sel ? COL_ACCENT : COL_BG;
         const uint16_t fg = sel ? COL_BG : COL_FG;
-        M5.Display.fillRect(0, y, TFT_W, rowH - 2, bg);
-        M5.Display.setTextColor(fg, bg);
+
+        // Inner row body — short of full row height to leave a gap.
+        M5.Display.fillRect(0, y, TFT_W, innerH, bg);
+        if (sel) {
+            // Extra accent stripe on the left so the selection is
+            // unmistakable even at a glance.
+            M5.Display.fillRect(0, y, accentW, innerH, COL_FG);
+        } else {
+            // Subtle divider between unselected rows.
+            M5.Display.drawFastHLine(8, y + innerH + 1, TFT_W - 16, COL_DIM);
+        }
 
         // Address on the right (size 2), name on the left with truncation.
+        M5.Display.setTextColor(fg, bg);
         M5.Display.setTextSize(2);
         String addr = String(e.length) + String(e.address);
         const int addrW = M5.Display.textWidth(addr);
+        const int textLeft = sel ? (accentW + 4) : 4;
         String name = e.name;
-        truncateToWidth(name, TFT_W - addrW - 12);
+        truncateToWidth(name, TFT_W - addrW - textLeft - 8);
         M5.Display.setTextDatum(top_left);
-        M5.Display.drawString(name, 4, y + 4);
+        M5.Display.drawString(name, textLeft, y + (innerH - 16) / 2);
         M5.Display.setTextDatum(top_right);
-        M5.Display.drawString(addr, TFT_W - 4, y + 4);
+        M5.Display.drawString(addr, TFT_W - 4, y + (innerH - 16) / 2);
     }
 }
 
