@@ -1,7 +1,5 @@
-// WiThrottleProtocol portable throttle for M5StickC Plus 2 (SKU K128) or
-// M5StickS3 (SKU K150) + MiniEncoderC HAT (SKU U157). Both share the same
-// 135x240 TFT, 8-pin HAT connector with I2C on GPIO 0/26, and M5Unified
-// button/power APIs, so a single source builds for either device.
+// WiThrottleProtocol portable throttle for M5StickC Plus 2 + MiniEncoderC HAT
+// (SKU U157).
 //
 // Features:
 //   * Captive-portal WiFi provisioning on first boot (or hold BtnB at power-on
@@ -353,7 +351,7 @@ void tickConnectThrottle() {
     WiFi.macAddress(mac);
     char tail[5];
     snprintf(tail, sizeof(tail), "%02X%02X", mac[4], mac[5]);
-    const String devName = String("M5Stick-") + tail;
+    const String devName = String("M5StickCPlus2-") + tail;
     wit.setDeviceName(devName);
     wit.setDeviceID(devName);
     enterRoster();
@@ -677,7 +675,7 @@ void setup() {
     Serial.begin(115200);
 
     UI::begin();
-    UI::splash("WiThrottle", "M5Stick");
+    UI::splash("WiThrottle", "M5StickC Plus 2");
 
     if (!encoder.begin()) {
         UI::splash("MiniEncoderC",

@@ -1,26 +1,18 @@
-# WiThrottleProtocol on M5StickC Plus 2 / M5StickS3 (with MiniEncoderC HAT)
+# WiThrottleProtocol on M5StickC Plus 2 (with MiniEncoderC HAT)
 
 A complete portable WiThrottle throttle that runs on an
 [M5StickC Plus 2](https://docs.m5stack.com/en/core/M5StickC%20PLUS2)
-or an [M5StickS3](https://docs.m5stack.com/en/core/StickS3) with the
-[M5Stack MiniEncoderC HAT (SKU U157)](https://docs.m5stack.com/en/hat/MiniEncoderC%20Hat)
+with the [M5Stack MiniEncoderC HAT (SKU U157)](https://docs.m5stack.com/en/hat/MiniEncoderC%20Hat)
 plugged into the top 8-pin connector. Connects to JMRI (or any other
 WiThrottle server) over WiFi, lets you pick a loco from the JMRI roster on
 the device, and drives it with a centre-zero rotary throttle.
-
-A single source builds for either Stick — the two devices share the same
-135x240 TFT, the same 8-pin HAT pinout, and the same M5Unified APIs. Pick
-the appropriate PlatformIO env or Arduino board entry below.
 
 ## Hardware
 
 | Part                                | Notes                                |
 |-------------------------------------|--------------------------------------|
-| M5StickC Plus 2 (SKU K128)          | ESP32-PICO-V3-02, 135x240 TFT in     |
+| M5StickC Plus 2                     | ESP32-PICO-V3-02, 135x240 TFT in     |
 |                                     | portrait, 200 mAh battery            |
-| M5StickS3 (SKU K150)                | ESP32-S3 sibling of the Plus 2 —     |
-|                                     | same 135x240 TFT, same HAT pinout,   |
-|                                     | 250 mAh battery, USB-C OTG           |
 | M5Stack MiniEncoderC HAT (U157)     | I2C @ 0x42, rotary encoder + push    |
 |                                     | button + single RGB LED              |
 
@@ -29,7 +21,7 @@ Press the HAT onto the 8-pin connector — no soldering. The HAT speaks I²C on
 
 ## Getting started
 
-The whole flow, from a fresh Stick to driving a loco, takes about
+The whole flow, from a fresh M5StickC Plus 2 to driving a loco, takes about
 five minutes.
 
 ### 1. Install the toolchain
@@ -39,9 +31,7 @@ flashing; Arduino IDE has a friendlier UI for tweaking single files.
 
 **PlatformIO** (recommended for repeat builds):
 
-Create `platformio.ini` in a folder containing a copy of this sketch.
-Use the env block that matches your hardware — both share the same
-`lib_deps` and `build_flags`.
+Create `platformio.ini` in a folder containing a copy of this sketch:
 
 ```ini
 [env:m5stickc-plus2]
@@ -54,43 +44,26 @@ lib_deps =
     m5stack/M5Unified
     https://github.com/flash62au/WiThrottleProtocol.git
 build_flags = -DCORE_DEBUG_LEVEL=0
-
-[env:m5sticks3]
-platform = espressif32
-board = esp32-s3-devkitc-1       ; verify against your platform-espressif32;
-                                  ; some versions ship m5stack-sticks3
-framework = arduino
-monitor_speed = 115200
-upload_speed = 1500000
-lib_deps =
-    m5stack/M5Unified
-    https://github.com/flash62au/WiThrottleProtocol.git
-build_flags = -DCORE_DEBUG_LEVEL=0 -DARDUINO_USB_CDC_ON_BOOT=1
 ```
 
 If your platform-espressif32 is older and doesn't have the `m5stick-c-plus2`
 board, use `board = m5stick-c-plus` and add
-`board_build.partitions = default.csv` — the binary is small enough. The
-`m5sticks3` env likewise falls back to any generic ESP32-S3 board id if the
-M5-specific one is missing from your platform version.
+`board_build.partitions = default.csv` — the binary is small enough.
 
 **Arduino IDE 2.x**:
 
 1. Boards Manager → install **M5Stack** (the package by M5Stack
-   Technology Co.). Version 2.1.0 or newer adds both the "M5StickC Plus 2"
-   and "M5StickS3" entries.
-2. Tools → Board → M5Stack → **M5StickC Plus 2** or **M5StickS3** depending
-   on which device you have.
+   Technology Co.). Version 2.1.0 or newer adds the "M5StickC Plus 2" entry.
+2. Tools → Board → M5Stack → **M5StickC Plus 2**.
 3. Library Manager → install **M5Unified** and **WiThrottleProtocol**.
-4. Open `WiThrottleProtocol_M5StickCPlus2.ino` (the sketch folder name is
-   historical — it builds for both Sticks). The IDE compiles every `.h` /
-   `.cpp` in the sketch folder automatically.
+4. Open `WiThrottleProtocol_M5StickCPlus2.ino`. The IDE compiles every `.h`
+   / `.cpp` in the sketch folder automatically.
 
 ### 2. Flash the firmware
 
 USB-C, hold the power button (the red one) for ~2 s to power on, then upload
 from your IDE. Reset (six-second hold) if the bootloader doesn't catch the
-first time. You should see a "WiThrottle / M5Stick" splash.
+first time. You should see a "WiThrottle / M5StickC Plus 2" splash.
 
 ### 3. Connect to your WiFi (first boot)
 
